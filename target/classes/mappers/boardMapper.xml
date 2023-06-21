@@ -43,6 +43,9 @@
     update board2 set good = good + #{gFlag} where idx = #{idx};
   </update>
   
+  <update id="setBoardUpdate">
+    update board2 set title=#{vo.title},email=#{vo.email},homePage=#{vo.homePage},content=#{vo.content},hostIp=#{vo.hostIp},openSw=#{vo.openSw},wDate=now() where idx = #{vo.idx};
+  </update>
   
   
   <delete id="setBoardDelete">

@@ -27,4 +27,8 @@ public interface BoardService {
 
 	public int setBoardDelete(int idx);
 
+	public void imgCheckUpdate(String content);
+
+	public int setBoardUpdate(BoardVO vo);
+
 }

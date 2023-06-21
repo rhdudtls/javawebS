@@ -3,6 +3,7 @@ package com.spring.javawebS;
 import java.util.ArrayList;
 import java.util.List;
 
+import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpSession;
 
 import org.springframework.beans.factory.annotation.Autowired;
@@ -135,10 +136,15 @@ public class BoardController {
 	
 	// 게시글 삭제하기
 	@RequestMapping(value = "/boardDelete", method = RequestMethod.GET)
-	public String boardDeleteGet(
-			@RequestParam(name="idx", defaultValue = "0", required = false)int idx,
-			@RequestParam(name="pag", defaultValue = "0", required = false)int pag,
-			@RequestParam(name="pageSize", defaultValue = "0", required = false)int pageSize) {
+	public String boardDeleteGet(HttpSession session, HttpServletRequest request,
+			@RequestParam(name="idx", defaultValue = "0", required=false) int idx,
+			@RequestParam(name="pag", defaultValue = "1", required=false) int pag,
+			@RequestParam(name="pageSize", defaultValue = "5", required=false) int pageSize,
+			@RequestParam(name="nickName", defaultValue = "", required=false) String nickName
+			) {
+		// String sNickName = (String) session.getAttribute("sNickName");
+		// if(!sNickName.equals(nickName)) return "redirect:/";
+		
 		// 게시글에 사진이 존재한다면 서버에 있는 사진파일을 먼저 삭제처리한다.
 		BoardVO vo = boardService.getBoardContent(idx);
 		if(vo.getContent().indexOf("src=\"/") != -1) boardService.imgDelete(vo.getContent());
@@ -148,6 +154,65 @@ public class BoardController {
 		
 		if(res == 1) return "redirect:/message/boardDeleteOk";
 		else return "redirect:/message/boardDeleteNo?idx="+idx+"&pag="+pag+"&pageSize="+pageSize;
+	}
+	
+	// 게시글 수정하기 폼 호출
+	@RequestMapping(value = "/boardUpdate", method = RequestMethod.GET)
+	public String boardUpdateGet(Model model,
+			@RequestParam(name="idx", defaultValue = "0", required=false) int idx,
+			@RequestParam(name="pag", defaultValue = "1", required=false) int pag,
+			@RequestParam(name="pageSize", defaultValue = "5", required=false) int pageSize
+		) {
+		// 수정창으로 이동시에는 먼저 원본파일에 그림파일이 있다면, 현재폴더(board)의 그림파일들을 ckeditor폴더로 복사시켜둔다.
+		BoardVO vo = boardService.getBoardContent(idx);
+		if(vo.getContent().indexOf("src=\"/") != -1) boardService.imgCheckUpdate(vo.getContent());
+		
+		model.addAttribute("vo", vo);
+		model.addAttribute("pag", pag);
+		model.addAttribute("pageSize", pageSize);
+		
+		return "board/boardUpdate";
+	}
+	
+	@RequestMapping(value = "/boardUpdate", method = RequestMethod.POST)
+	public String boardUpdatePost(BoardVO vo,
+			@RequestParam(name="pag", defaultValue = "1", required=false) int pag,
+			@RequestParam(name="pageSize", defaultValue = "5", required=false) int pageSize,
+			Model model) {
+		
+		//수정된 자료가 원본자료와 완전히 동일하다면 수정할 필요가 없기에 DB에 있는 원본자료와 비교한다.
+		BoardVO origiVO = boardService.getBoardContent(vo.getIdx());
+		
+		// content의 내용이 조금이라도 변경된것이 있다면 내용을 수정처리한다.
+		if(!origiVO.getContent().equals(vo.getContent())) {
+			// 실제로 수정하기 버튼을 클릭하게되면, 기존의 board폴더에 저장된, 현재 content의 그림파일 모두를 삭제 시킨다.
+			if(origiVO.getContent().indexOf("src=\"/") != -1) boardService.imgDelete(origiVO.getContent());
+			
+			// board폴더에는 이미 그림파일이 삭제되어 있으므로(ckeditor폴더로 복사해놓았음), vo.getContent()에 있는 그림파일경로 'board'를 'ckeditor'경로로 변경해줘야한다.
+			vo.setContent(vo.getContent().replace("/data/board/", "/data/ckeditor/"));
+			
+			// 앞의 작업이 끝나면 파일을 처음 업로드한것과 같은 작업을 처리시켜준다.
+			// content에 이미지가 저장되어 있다면, 저장된 이미지만 골라서 /resources/data/board/폴더에 저장시켜준다.
+			boardService.imgCheck(vo.getContent());
+			
+			// 이미지들의 모든 복사작업을 마치면, ckeditor폴더경로를 board폴더 경로로 변경한다.(/resources/data/ckeditor/ ===>> /resources/data/board/)
+			vo.setContent(vo.getContent().replace("/data/ckeditor/", "/data/board/"));
+		}
+		
+		// content의 내용과 그림파일까지 잘 정비된 vo를 DB에 Update시켜준다.
+		int res = boardService.setBoardUpdate(vo);
+		
+		model.addAttribute("idx", vo.getIdx());
+		model.addAttribute("pag", pag);
+		model.addAttribute("pageSize", pageSize);
+		
+		if(res == 1) {
+			return "redirect:/message/boardUpdateOk";
+		}
+		else {
+			return "redirect:/message/boardUpdateNo";
+		}
+		
 	}
 	
 }

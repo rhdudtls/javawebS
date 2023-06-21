@@ -13,6 +13,7 @@ public class MessageController {
 	@RequestMapping(value = "/message/{msgFlag}", method = RequestMethod.GET)
 	public String listGet(@PathVariable String msgFlag,
 			@RequestParam(name="mid", defaultValue = "", required=false) String mid,
+			@RequestParam(name="temp", defaultValue = "", required=false) String temp,
 			@RequestParam(name="idx", defaultValue = "0", required=false) int idx,
 			@RequestParam(name="pag", defaultValue = "1", required=false) int pag,
 			@RequestParam(name="pageSize", defaultValue = "5", required=false) int pageSize,
@@ -165,6 +166,34 @@ public class MessageController {
 		else if(msgFlag.equals("boardDeleteNo")) {
 			model.addAttribute("msg", "게시글이 삭제 실패~~");
 			model.addAttribute("url", "/board/boardContent?idx="+idx+"&pag="+pag+"&pageSize="+pageSize);
+		}
+		else if(msgFlag.equals("boardUpdateOk")) {
+			model.addAttribute("msg", "게시글이 수정되었습니다.");
+			model.addAttribute("url", "/board/boardList?pag="+pag+"&pageSize="+pageSize);
+		}
+		else if(msgFlag.equals("boardUpdateNo")) {
+			model.addAttribute("msg", "게시글이 수정 실패~~");
+			model.addAttribute("url", "/board/boardUpdate?idx="+idx+"&pag="+pag+"&pageSize="+pageSize);
+		}
+		else if(msgFlag.equals("userInputOk")) {
+			model.addAttribute("msg", "유저등록 OK!!!");
+			model.addAttribute("url", "/study/validator/validatorList");
+		}
+		else if(msgFlag.equals("userInputNo")) {
+			model.addAttribute("msg", "유저등록 실패~~~");
+			model.addAttribute("url", "/study/validator/validatorForm");
+		}
+		else if(msgFlag.equals("userCheckNo")) {
+			model.addAttribute("msg", "유저정보를 확인하세요~~");
+			model.addAttribute("url", "/study/validator/validatorForm");
+		}
+		else if(msgFlag.equals("validatorDeleteOk")) {
+			model.addAttribute("msg", "유저정보가 삭제 되었습니다.");
+			model.addAttribute("url", "/study/validator/validatorList");
+		}
+		else if(msgFlag.equals("validatorError")) {
+			model.addAttribute("msg", "등록 실패~~ "+temp+"를 확인하세요...");
+			model.addAttribute("url", "/study/validator/validatorForm");
 		}
 		
 		

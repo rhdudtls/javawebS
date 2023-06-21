@@ -7,6 +7,7 @@ import java.io.UnsupportedEncodingException;
 import java.security.InvalidKeyException;
 import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.List;
 import java.util.UUID;
 
 import javax.mail.MessagingException;
@@ -22,6 +23,9 @@ import org.springframework.mail.javamail.MimeMessageHelper;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
+import org.springframework.validation.BindingResult;
+import org.springframework.validation.ObjectError;
+import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestMethod;
 import org.springframework.web.bind.annotation.RequestParam;
@@ -34,6 +38,7 @@ import com.spring.javawebS.service.MemberService;
 import com.spring.javawebS.service.StudyService;
 import com.spring.javawebS.vo.MailVO;
 import com.spring.javawebS.vo.MemberVO;
+import com.spring.javawebS.vo.UserVO;
 
 @Controller
 @RequestMapping("/study")
@@ -387,5 +392,73 @@ public class StudyController {
 		fis.close();
 		
 		//return "study/fileUpload/fileUploadForm";
+	}
+	
+	// validator를 이용한 Backend 유효성 검사하기
+	@RequestMapping(value = "/validator/validatorForm", method = RequestMethod.GET)
+	public String validatorFormGet() {
+		return "study/validator/validatorForm";
+	}
+	
+	/*
+	// validator를 이용한 Backend 유효성 검사하기 - 자료 검사후 DB에 저장하기
+	@RequestMapping(value = "/validator/validatorForm", method = RequestMethod.POST)
+	public String validatorFormPost(UserVO vo) {
+		System.out.println("vo : " + vo);
+		
+		if(vo.getMid().equals("") || vo.getName().equals("") || vo.getMid().length() < 3 || vo.getAge() < 18) {
+			return "redirect:/message/userCheckNo";
+		}
+		
+		int res = studyService.setUserInput(vo);
+		if(res == 1) return "redirect:/message/userInputOk";
+		else return "redirect:/message/userInputNo";
+	}
+	*/	
+	// validator를 이용한 Backend 유효성 검사하기 - 자료 검사후 DB에 저장하기
+	@RequestMapping(value = "/validator/validatorForm", method = RequestMethod.POST)
+	public String validatorFormPost(Model model,
+			@Validated UserVO vo, BindingResult bindingResult			
+			) {
+		System.out.println("vo : " + vo);
+		
+		System.out.println("error : " + bindingResult.hasErrors());
+		
+		if(bindingResult.hasFieldErrors()) {	// bindingResult.hasFieldErrors() 결과값이 true가 나오면 오류가 있다는 것이다.
+			List<ObjectError> list = bindingResult.getAllErrors();
+			System.out.println("~~~~~~~~~~~~~~~~~~~~~~~");
+			
+			String temp = "";
+			for(ObjectError e : list) {
+				System.out.println("메세지 : " + e.getDefaultMessage());
+				temp = e.getDefaultMessage().substring(e.getDefaultMessage().indexOf("/")+1);
+				if(temp.equals("midEmpty") || temp.equals("midSizeNo") || temp.equals("nameEmpty") || temp.equals("nameSizeNo") || temp.equals("ageRangeNo")) break;
+			}
+			System.out.println("temp : " + temp);
+			System.out.println("~~~~~~~~~~~~~~~~~~~~~~~");
+			model.addAttribute("temp", temp);
+			return "redirect:/message/validatorError";
+		}
+		
+		int res = studyService.setUserInput(vo);
+		if(res == 1) return "redirect:/message/userInputOk";
+		else return "redirect:/message/userInputNo";
+	}
+	
+	// user리스트 보여주기
+	@RequestMapping(value = "/validator/validatorList", method = RequestMethod.GET)
+	public String validatorListGet(Model model) {
+		ArrayList<UserVO> vos = studyService.getUserList();
+		model.addAttribute("vos", vos);
+		
+		return "study/validator/validatorList";
+	}
+	
+	// user 삭제하기
+	@RequestMapping(value = "/validator/validatorDelete", method = RequestMethod.GET)
+	public String validatorDeleteGet(int idx) {
+		studyService.setUserDelete(idx);
+		
+		return "redirect:/message/validatorDeleteOk";
 	}
 }
